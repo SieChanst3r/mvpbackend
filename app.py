@@ -35,7 +35,7 @@ def gymLoginOut():
             print("Something went wrong: Coding error ")        
             print(error)
         except mariadb.OperationalError as error:
-            print("uh oh, an Connection error occurred!")
+            print("uh oh, a Connection error occurred!")
             print(error)
         except mariadb.DatabaseError as error:
             print("A Database error interrupted your experience.. oops")
@@ -76,7 +76,7 @@ def gymLoginOut():
             print("Something went wrong: Coding error ")        
             print(error)
         except mariadb.OperationalError as error:
-            print("uh oh, an Connection error occurred!")
+            print("uh oh, a Connection error occurred!")
             print(error)
         except mariadb.DatabaseError as error:
             print("A Database error interrupted your experience.. oops")
@@ -118,11 +118,11 @@ def gymMembers():
                 cursor.execute("INSERT INTO user_session(userId, loginToken) VALUES(?, ?)", [userId, loginToken])
                 conn.commit()
                 rows = cursor.rowcount      
-                 except mariadb.ProgrammingError as error:
+        except mariadb.ProgrammingError as error:
             print("Something went wrong: Coding error ")        
             print(error)
         except mariadb.OperationalError as error:
-            print("uh oh, an Connection error occurred!")
+            print("uh oh, a Connection error occurred!")
             print(error)
         except mariadb.DatabaseError as error:
             print("A Database error interrupted this.. oops")
@@ -147,3 +147,49 @@ def gymMembers():
                 return Response(json.dumps(user_data, default=str), mimetype="application/json", status=201)
             else:
                 return Response("Something went wrong!", mimetype="text/html", status=500)    
+@app.route("/api/slots", methods=['GET'])
+def workoutSlots():
+    if request.method == 'GET':
+        conn = None
+        cursor = None
+        rows = None
+        user = None 
+        userId = request.args.get("userId")
+        slots = None
+        try:
+            conn = mariadb.connect(host=dbcreds.host, password=dbcreds.password, user=dbcreds.user, port=dbcreds.port, database=dbcreds.database)
+            cursor = conn.cursor() 
+            if userId != None:
+                cursor.execute("SELECT * FROM workout_slot WHERE id = ?", [userId],)
+            else:
+                cursor.execute("SELECT * FROM workout_slot")
+            slots = cursor.fetchall()
+        except mariadb.OperationalError as error:
+            print("uh oh, a Connection error occurred!")
+            print(error)
+        except mariadb.DatabaseError as error:
+            print("A Database error interrupted this.. oops")
+            print(error)
+        except Exception as error:
+            print(error)
+        finally:
+            if(cursor != None):
+                cursor.close()
+            if(conn != None):
+                 conn.rollback()
+                 conn.close()
+            if(slots != None):
+                all_slots_data = []
+                for slot in slots:
+                    slot_data = {
+                    "id": slot[0],
+                    "userId": slot[1],
+                    "startTime": slot[2],
+                    "endTime": slot[3],
+                    "workoutName": slot[4]
+                }
+                all_slots_data.append(slot_data)
+            return Response(json.dumps(all_slots_data, default=str), mimetype="application/json", status= 200)
+            else:
+                return Response("Something went wrong here, please try again", mimetype="text/html", status= 500)
+    
